@@ -9,10 +9,22 @@ io.stdout:setvbuf'no'
 
 local stack = {}
 local jump = {}
+local pat = {
+    ['<'] = '<+',
+    ['>'] = '>+',
+    ['+'] = '++',
+    ['-'] = '-+',
+    ['['] = '%[',
+    [']'] = '%]',
+    ['.'] = '%.',
+    [','] = ',',
+}
+local nb = {}
 local code = {}
 for pc = 1, len do
     local opcode = src:sub(pc, pc)
     code[pc] = opcode
+    nb[pc] = src:match(pat[opcode], pc):len()
     if opcode == '[' then
         stack[#stack+1] = pc
     elseif opcode == ']' then
@@ -35,14 +47,15 @@ local ptr = 1
 local pc = 1
 while pc <= len do
     local opcode = code[pc]
+    local n = nb[pc]
     if opcode == '>' then
-        ptr = ptr + 1
+        ptr = ptr + n
     elseif opcode == '<' then
-        ptr = ptr - 1
+        ptr = ptr - n
     elseif opcode == '+' then
-        buffer[ptr] = buffer[ptr] + 1
+        buffer[ptr] = buffer[ptr] + n
     elseif opcode == '-' then
-        buffer[ptr] = buffer[ptr] - 1
+        buffer[ptr] = buffer[ptr] - n
     elseif opcode == '.' then
         io.stdout:write(string.char(buffer[ptr]))
     elseif opcode == ',' then
@@ -56,5 +69,5 @@ while pc <= len do
             pc = jump[pc]
         end
     end
-    pc = pc + 1
+    pc = pc + n
 end
